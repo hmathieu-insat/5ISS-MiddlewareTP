@@ -86,13 +86,13 @@ void callback(char *topic, byte *payload, unsigned int length)
     // Switch on the LED if an 1 was received as first character
     if ((char)payload[0] == '1')
     {
-        digitalWrite(BUILTIN_LED, LOW); // Turn the LED on (Note that LOW is the voltage level
+        digitalWrite(ledPin, LOW); // Turn the LED on (Note that LOW is the voltage level
                                         // but actually the LED is on; this is because
                                         // it is active low on the ESP-01)
     }
     else
     {
-        digitalWrite(BUILTIN_LED, HIGH); // Turn the LED off by making the voltage HIGH
+        digitalWrite(ledPin, HIGH); // Turn the LED off by making the voltage HIGH
     }
 }
 
@@ -110,9 +110,9 @@ void reconnect()
         {
             Serial.println("connected");
             // Once connected, publish an announcement...
-            client.publish("outTopic", "hello world");
+            client.publish("buttons/3", "hello world");
             // ... and resubscribe
-            client.subscribe("inTopic");
+            client.subscribe("buttons/3");
         }
         else
         {
