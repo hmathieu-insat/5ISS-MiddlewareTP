@@ -188,13 +188,10 @@ void loop()
                 publishMessage("buttons/3", "1");
             }
 #else
-            if (buttonState == LOW)
+            if (buttonState == HIGH)
             { // button is pressed
-                publishMessage("buttons/3", "1");
-            }
-            else
-            { // button is released
-                publishMessage("buttons/3", "0");
+                triggerButton(ledState);
+                ledState = !ledState;
             }
 #endif
         }
