@@ -27,8 +27,8 @@ const char* password = "altiotaltiot";
 const char* mqtt_server = "192.168.1.1";
 
 // LED button constants
-const int ledPin = 3;
-const int buttonPin = 5;
+const int ledPin = D3;
+const int buttonPin = D5;
 
 // Network variables definition
 WiFiClient espClient;
