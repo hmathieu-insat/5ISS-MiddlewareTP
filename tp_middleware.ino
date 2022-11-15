@@ -41,6 +41,7 @@ int value = 0;
 // LED button definition
 int ledState = LOW;
 int lastButtonState = HIGH;
+int buttonState;
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 unsigned long lastLedFadeTime = 0;
@@ -137,8 +138,8 @@ void loop() {
   }
   client.loop();
 
-  int buttonState = digitalRead(buttonPin);
-  if (buttonState != lastButtonState) {
+  int reading = digitalRead(buttonPin);
+  if (reading != lastButtonState) {
     // reset the debouncing timer
     lastDebounceTime = millis();
   }
@@ -147,25 +148,22 @@ void loop() {
     // than the debounce delay, so take it as the actual current state:
 
     // if the button state has changed:
-    if (buttonState != buttonState) {
-      buttonState = buttonState;
+    if (reading != buttonState) {
+      buttonState = reading;
 
 #if LED_MODE == 1
       if (buttonState == LOW) {  //button is pressed
-        ledState = !ledState;
         publishMessage("buttons/3", "1");
       }
 #else
       if (buttonState == LOW) {  //button is pressed
-        ledState = HIGH;
         publishMessage("buttons/3", "1");
       } else {  //button is released
-        ledState = LOW;
         publishMessage("buttons/3", "0");
       }
 #endif
     }
   }
 
-  lastButtonState = buttonState;
+  lastButtonState = reading;
 }
