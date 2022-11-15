@@ -21,18 +21,29 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
-// Update these with values suitable for your network.
-
+// Network constants
 const char* ssid = "altiot";
 const char* password = "altiotaltiot";
 const char* mqtt_server = "192.168.1.1";
 
+// LED button constants
+const int ledPin = 3;
+const int buttonPin = 5;
+
+// Network variables definition
 WiFiClient espClient;
 PubSubClient client(espClient);
 unsigned long lastMsg = 0;
-#define MSG_BUFFER_SIZE	(50)
+#define MSG_BUFFER_SIZE (50)
 char msg[MSG_BUFFER_SIZE];
 int value = 0;
+
+// LED button definition
+int ledState = LOW;
+int lastButtonState = HIGH;
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+unsigned long lastLedFadeTime = 0;
 
 void setup_wifi() {
 
@@ -69,13 +80,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   // Switch on the LED if an 1 was received as first character
   if ((char)payload[0] == '1') {
-    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
+    digitalWrite(BUILTIN_LED, LOW);  // Turn the LED on (Note that LOW is the voltage level
     // but actually the LED is on; this is because
     // it is active low on the ESP-01)
   } else {
     digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
   }
-
 }
 
 void reconnect() {
@@ -102,8 +112,18 @@ void reconnect() {
   }
 }
 
+void publishMessage(char* topic, char* msg_text) {
+    snprintf(msg, MSG_BUFFER_SIZE, msg_text);
+    Serial.print("Publish message: ");
+    Serial.println(msg);
+    client.publish(topic, msg);
+}
+
 void setup() {
-  pinMode(BUILTIN_LED, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+  pinMode(BUILTIN_LED, OUTPUT);
+  pinMode(buttonPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, ledState);  // Initialize the BUILTIN_LED pin as an output
   Serial.begin(9600);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
@@ -117,13 +137,35 @@ void loop() {
   }
   client.loop();
 
-  unsigned long now = millis();
-  if (now - lastMsg > 2000) {
-    lastMsg = now;
-    ++value;
-    snprintf (msg, MSG_BUFFER_SIZE, "hello world #%ld", value);
-    Serial.print("Publish message: ");
-    Serial.println(msg);
-    client.publish("outTopic", msg);
+  int buttonState = digitalRead(buttonPin);
+  if (buttonState != lastButtonState) {
+    // reset the debouncing timer
+    lastDebounceTime = millis();
   }
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    // whatever the reading is at, it's been there for longer
+    // than the debounce delay, so take it as the actual current state:
+
+    // if the button state has changed:
+    if (buttonState != buttonState) {
+      buttonState = buttonState;
+
+#if LED_MODE == 1
+      if (buttonState == LOW) {  //button is pressed
+        ledState = !ledState;
+        publishMessage("buttons/3", "1");
+      }
+#else
+      if (buttonState == LOW) {  //button is pressed
+        ledState = HIGH;
+        publishMessage("buttons/3", "1");
+      } else {  //button is released
+        ledState = LOW;
+        publishMessage("buttons/3", "0");
+      }
+#endif
+    }
+  }
+
+  lastButtonState = buttonState;
 }
